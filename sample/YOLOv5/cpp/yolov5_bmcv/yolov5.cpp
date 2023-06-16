@@ -21,11 +21,11 @@ const std::vector<std::vector<int>> colors = {{255, 0, 0}, {255, 85, 0}, {255, 1
                 {255, 0, 255}, {255, 85, 255}, {255, 170, 255}, {255, 255, 255}, {170, 255, 255}, {85, 255, 255}};
 
 YoloV5::YoloV5(std::shared_ptr<BMNNContext> context):m_bmContext(context) {
-  std::cout << "YoloV5 ctor .." << std::endl;
+  // std::cout << "YoloV5 ctor .." << std::endl;
 }
 
 YoloV5::~YoloV5() {
-  std::cout << "YoloV5 dtor ..." << std::endl;
+  // std::cout << "YoloV5 dtor ..." << std::endl;
   bm_image_free_contiguous_mem(max_batch, m_resized_imgs.data());
   bm_image_free_contiguous_mem(max_batch, m_converto_imgs.data());
   for(int i=0; i<max_batch; i++){
@@ -105,22 +105,22 @@ int YoloV5::Detect(const std::vector<bm_image>& input_images, std::vector<YoloV5
 {
   int ret = 0;
   //3. preprocess
-  LOG_TS(m_ts, "yolov5 preprocess");
+  // LOG_TS(m_ts, "yolov5 preprocess");
   ret = pre_process(input_images);
   CV_Assert(ret == 0);
-  LOG_TS(m_ts, "yolov5 preprocess");
+  // LOG_TS(m_ts, "yolov5 preprocess");
 
   //4. forward
-  LOG_TS(m_ts, "yolov5 inference");
+  // LOG_TS(m_ts, "yolov5 inference");
   ret = m_bmNetwork->forward();
   CV_Assert(ret == 0);
-  LOG_TS(m_ts, "yolov5 inference");
+  // LOG_TS(m_ts, "yolov5 inference");
 
   //5. post process
-  LOG_TS(m_ts, "yolov5 postprocess");
+  // LOG_TS(m_ts, "yolov5 postprocess");
   ret = post_process(input_images, boxes);
   CV_Assert(ret == 0);
-  LOG_TS(m_ts, "yolov5 postprocess");
+  // LOG_TS(m_ts, "yolov5 postprocess");
   return ret;
 }
 
@@ -282,7 +282,7 @@ int YoloV5::post_process(const std::vector<bm_image> &images, std::vector<YoloV5
     }
 
     if(min_dim == 5){
-      LOG_TS(m_ts, "post 1: get output and decode");
+      // LOG_TS(m_ts, "post 1: get output and decode");
       // std::cout<<"--> Note: Decoding Boxes"<<std::endl;
       // std::cout<<"          you can put the process into model during trace"<<std::endl;
       // std::cout<<"          which can reduce post process time, but forward time increases 1ms"<<std::endl;
@@ -328,17 +328,17 @@ int YoloV5::post_process(const std::vector<bm_image> &images, std::vector<YoloV5
         }
       }
       output_data = decoded_data.data();
-      LOG_TS(m_ts, "post 1: get output and decode");
+      // LOG_TS(m_ts, "post 1: get output and decode");
     } else {
-      LOG_TS(m_ts, "post 1: get output");
+      // LOG_TS(m_ts, "post 1: get output");
       assert(box_num == 0 || box_num == out_tensor->get_shape()->dims[1]);
       box_num = out_tensor->get_shape()->dims[1];
       output_data = (float*)out_tensor->get_cpu_data() + batch_idx*box_num*nout;
-      LOG_TS(m_ts, "post 1: get output");
+      // LOG_TS(m_ts, "post 1: get output");
     }
 
 
-    LOG_TS(m_ts, "post 2: filter boxes");
+    // LOG_TS(m_ts, "post 2: filter boxes");
     for (int i = 0; i < box_num; i++) {
       float* ptr = output_data+i*nout;
       float score = ptr[4];
@@ -363,9 +363,9 @@ int YoloV5::post_process(const std::vector<bm_image> &images, std::vector<YoloV5
           yolobox_vec.push_back(box);
       }
     }
-    LOG_TS(m_ts, "post 2: filter boxes");
+    // LOG_TS(m_ts, "post 2: filter boxes");
 
-    LOG_TS(m_ts, "post 3: nms");
+    // LOG_TS(m_ts, "post 3: nms");
 #if USE_MULTICLASS_NMS
     std::vector<YoloV5BoxVec> class_vec(m_class_num);
     for (auto& box : yolobox_vec){
@@ -381,7 +381,7 @@ int YoloV5::post_process(const std::vector<bm_image> &images, std::vector<YoloV5
 #else
     NMS(yolobox_vec, m_nmsThreshold);
 #endif
-    LOG_TS(m_ts, "post 3: nms");
+    // LOG_TS(m_ts, "post 3: nms");
 
     detected_boxes.push_back(yolobox_vec);
   }
